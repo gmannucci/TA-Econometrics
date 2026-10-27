@@ -1,0 +1,5 @@
+[0] Config.pm:328> INFO - This is Biber 2.21
+[0] Config.pm:331> INFO - Logfile is 'ta_session_ci_ht.blg'
+[32] biber-darwin:342> INFO - === Tue Oct 27, 2026, 10:25:50
+[133] Utils.pm:479> ERROR - Cannot find 'ta_session_ci_ht.bcf'!
+[133] Biber.pm:137> INFO - ERRORS: 1

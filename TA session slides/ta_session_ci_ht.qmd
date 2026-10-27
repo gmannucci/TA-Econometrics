@@ -1,0 +1,661 @@
+---
+title: "Confidence Intervals & Hypothesis Testing"
+subtitle: "Econometrics · TA session (90 min)"
+author: "TA session · UniTo ESOMAS"
+format:
+  beamer:
+    theme: metropolis
+    aspectratio: 169
+    fontsize: 11pt
+    slide-level: 2
+    keep-tex: false
+    header-includes: |
+      \definecolor{navy}{HTML}{23395B}
+      \definecolor{rust}{HTML}{C8553D}
+      \definecolor{softgrey}{HTML}{EEF1F5}
+      \setbeamercolor{frametitle}{bg=navy,fg=white}
+      \setbeamercolor{progress bar}{fg=rust,bg=softgrey}
+      \setbeamercolor{alerted text}{fg=rust}
+      \setbeamercolor{block title}{bg=navy!12,fg=navy}
+      \setbeamercolor{block body}{bg=navy!4}
+      \setbeamercolor{block title alerted}{bg=rust!15,fg=rust}
+      \setbeamercolor{block body alerted}{bg=rust!4}
+      \setbeamercolor{block title example}{bg=navy!12,fg=navy}
+      \setbeamercolor{block body example}{bg=softgrey}
+      \renewcommand{\arraystretch}{1.25}
+      \newcommand{\ybar}{\bar{y}}
+      \newcommand{\se}{\mathrm{SE}}
+---
+
+## The big picture: why are we doing this?
+
+**The situation.** There is a population with an unknown mean $\mu$ (e.g. the average commuting time of *all* workers). We cannot measure everybody, so we draw a **sample** and compute $\bar y$.
+
+**The problem.** A different sample would give a different $\bar y$. So $\bar y$ is only a *guess* of $\mu$.
+
+::: {.block}
+### Two questions that statistics answers
+1. **Confidence interval:** *"Given my sample, which values of $\mu$ are plausible?"* $\to$ a range instead of a single number.
+2. **Hypothesis test:** *"Is a specific claim about $\mu$ (e.g. $\mu=30$) compatible with my sample, or is it too surprising?"*
+:::
+
+Both rely on **one idea**: knowing *how much $\bar y$ typically moves around $\mu$* from sample to sample. That is the *standard error*.
+
+## Roadmap for today (90 min)
+
+| Block | Content | Time |
+|:--------------------------|:----------------------------------------------|-----:|
+| **1. Warm-up** | Conditional mean & Law of Iterated Expectations | 15' |
+| **2. Sampling distribution** | $\bar y$, $s^2$, standard error, CLT | 15' |
+| **3. Confidence intervals** | known / unknown $\sigma^2$, large / small $n$, sample size | 25' |
+| **4. Hypothesis testing** | $t$-test on a mean, p-value, Type I/II errors, power | 25' |
+| **5. Wrap-up** | Cheat sheet, common traps | 10' |
+
+**Scope:** everything here is taken from Lectures 1–4 (Introduction, Probability, Hypothesis) and the exercise set.
+
+**How the slides work:** *idea in words* $\to$ formula $\to$ **worked example** $\to$ **exercise** (with a hint) $\to$ **solution**.
+
+If time is short: Exercises 3, 7 and 10 can be done at home; the solutions are on the slides.
+
+## Notation: your glossary for the session
+
+| Symbol | Meaning | Known? |
+|:--------|:------------------------------------------------------|:------------|
+| $\mu$ | true **population** mean (what we want to learn) | unknown |
+| $\sigma^2,\ \sigma$ | true population variance / standard deviation | usually unknown |
+| $n$ | sample size | known |
+| $\bar y$ | **sample** mean: our estimate of $\mu$ | computed |
+| $s^2_{n-1},\ s$ | **sample** variance / sd: our estimate of $\sigma^2$, $\sigma$ | computed |
+| $\mathrm{SE}(\bar y)=s/\sqrt n$ | standard error: typical size of the error $\bar y-\mu$ | computed |
+| $\alpha$ | allowed probability of a "false alarm" (usually 5%) | chosen |
+| $z,\ t$ | critical values from the normal / $t$ distribution | tables |
+
+**Rule of thumb:** Greek letters = unknown truth about the population; Latin letters = what we compute from data.
+
+# 1. Warm-up: conditional means
+
+## Conditional mean: the average *inside a group*
+
+**Idea.** The overall average hides differences between groups. The conditional mean answers: *"what is the average of $Y$ among those with $X=x$?"*
+
+::: {.exampleblock}
+### Tiny example
+10 students. 6 attended the review session ($X=1$), 4 did not ($X=0$). Mean grade: $70$ for attendees, $55$ for the others.
+$$E(Y\mid X=1)=70,\qquad E(Y\mid X=0)=55$$
+:::
+
+* In a sample: just the average of the observations in that group.
+
+## Conditional mean from probabilities (discrete case)
+
+When we have a joint probability table instead of raw data:
+
+$$\Pr(Y=y\mid X=x)=\frac{\Pr(Y=y,\ X=x)}{\Pr(X=x)}$$
+$$E(Y\mid X=x)=\sum_{j} y_j \,\Pr(Y=y_j\mid X=x)$$
+
+::: {.block}
+### Three-step recipe
+1. **Pick the row** (or column) of the group $X=x$.
+2. **Divide by its total** $\Rightarrow$ conditional probabilities (they now sum to 1).
+3. **Weighted average** of the values $y_j$ using those probabilities.
+:::
+
+Same as the ordinary mean, but we first "zoom in" on one group and renormalise.
+
+## Law of Iterated Expectations: from groups back to the whole
+
+**Idea.** The overall mean is the **weighted average of the group means**, where each group is weighted by *how large it is*.
+
+::: {.exampleblock}
+### Continuing the tiny example
+$$E(Y)=\underbrace{\tfrac{6}{10}}_{\text{share}}\times\underbrace{70}_{\text{mean}}+\underbrace{\tfrac{4}{10}}_{\text{share}}\times\underbrace{55}_{\text{mean}}=42+22=64$$
+:::
+
+$$E(Y)=\sum_{i} E(Y\mid X=x_i)\,\Pr(X=x_i)\qquad\text{in a sample: }\ \bar y=\sum_g \frac{n_g}{n}\,\bar y_g$$
+
+* **Common error:** averaging the group means *without* weights. $(70+55)/2=62.5\neq64$.
+* If $E(Y\mid X)=0$ for every $X$, then $E(Y)=0$.
+
+## Exercise 1 · Conditional mean from a joint table {.smaller}
+
+A café records, for each customer, the **number of coffees** $Y$ and the **time of the visit** $X$. Joint probabilities:
+
+| | $Y=0$ | $Y=1$ | $Y=2$ | $Y=3$ |
+|:--------------|-----:|-----:|-----:|-----:|
+| Morning ($X=M$) | 0.06 | 0.18 | 0.24 | 0.12 |
+| Afternoon ($X=A$) | 0.12 | 0.12 | 0.10 | 0.06 |
+
+1. Marginal distribution of $X$ (add up each row).
+2. Conditional distribution of $Y$ given $X=M$ and given $X=A$ *(hint: divide each row by its total)*.
+3. $E(Y\mid X=M)$ and $E(Y\mid X=A)$.
+4. $E(Y)$ via the LIE; check against the marginal of $Y$.
+
+## Solution · Exercise 1 {.smaller}
+
+**1.** $\Pr(M)=0.06+0.18+0.24+0.12=0.60$, $\ \Pr(A)=0.40$.
+
+**2.** Divide each row by its total (rows now sum to 1):
+
+| | $Y=0$ | $Y=1$ | $Y=2$ | $Y=3$ |
+|:--------------|-----:|-----:|-----:|-----:|
+| $\Pr(Y\mid M)$ | 0.10 | 0.30 | 0.40 | 0.20 |
+| $\Pr(Y\mid A)$ | 0.30 | 0.30 | 0.25 | 0.15 |
+
+**3.** $E(Y\mid M)=0(0.1)+1(0.3)+2(0.4)+3(0.2)=\mathbf{1.70}$; $\quad E(Y\mid A)=0(0.3)+0.3+2(0.25)+3(0.15)=\mathbf{1.25}$.
+
+**4.** $E(Y)=1.70(0.60)+1.25(0.40)=\mathbf{1.52}$ (check with marginal of $Y$: $1.52$ $\checkmark$). Mornings are bigger and buy more, so $E(Y)$ is closer to the morning mean.
+
+## Exercise 2 · LIE with group means and sample sizes {.smaller}
+
+A survey of 300 students reports average weekly study hours by cohort:
+
+| Cohort | $n_g$ | $\bar y_g$ (hours) |
+|:--------------|-----:|-----:|
+| 1st-year Bachelor | 100 | 14 |
+| 2nd-year Bachelor | 150 | 18 |
+| Master | 50 | 26 |
+
+Compute the average study time of the whole sample, **without** the raw data. Then compute the **unweighted** average of the three group means: why is it different?
+
+*Hint:* the weights are the group shares $n_g/n$.
+
+## Solution · Exercise 2
+
+Weights are $n_g/n$ = $1/3,\ 1/2,\ 1/6$:
+$$\bar y=\tfrac{100}{300}(14)+\tfrac{150}{300}(18)+\tfrac{50}{300}(26)=4.667+9+4.333=\mathbf{18.0}\text{ hours}$$
+
+The simple average of the group means, $(14+18+26)/3=19.33$, is **wrong**: it treats the small Master group as if it were as large as the others. The LIE needs the **weights**.
+
+# 2. Sampling distribution & CLT
+
+## Why does $\bar y$ vary? The sampling distribution
+
+**Thought experiment.** Draw a sample of $n$ workers, compute $\bar y$. Throw it back, draw a *new* sample, compute a new $\bar y$. Repeat many times.
+
+* Each repetition gives a **different** $\bar y$. So **before** we draw it, $\bar y$ is a *random variable*.
+* The distribution of all these $\bar y$ values is the **sampling distribution** of $\bar y$.
+* Our actual sample is **one draw** from that distribution. Everything in this session asks: *how far can one draw be from $\mu$?*
+
+::: {.block}
+### Estimator vs estimate
+**Estimator** = the recipe ("take the average"), a random variable. **Estimate** = the number the recipe gives for *your* sample.
+:::
+
+## What we know about the sampling distribution of $\bar y$
+
+For an i.i.d. sample with population mean $\mu$ and variance $\sigma^2$:
+
+$$E(\bar y)=\mu\quad\text{(on average right: unbiased)}\qquad\qquad \mathrm{sd}(\bar y)=\frac{\sigma}{\sqrt n}$$
+
+::: columns
+:::: {.column width="52%"}
+![Individuals are spread out; sample means are concentrated, more so as $n$ grows.](figs/se_n.pdf){width=100%}
+::::
+:::: {.column width="48%"}
+* **Averaging cancels noise:** high and low observations offset each other.
+* Spread of $\bar y$ is $\sigma/\sqrt n$: $n=10,40,160$ gives $3.2,\ 1.6,\ 0.8$ (with $\sigma=10$).
+* Each 4-fold increase in $n$ halves the typical error.
+::::
+:::
+
+## Estimating the unknown: $s^2$ and the standard error
+
+We almost never know $\sigma$. We replace it by the sample version:
+
+$$s_{n-1}^2=\frac{1}{n-1}\sum_{i=1}^n (y_i-\bar y)^2 ,\qquad\qquad \se(\bar y)=\frac{s_{n-1}}{\sqrt n}=\sqrt{\frac{s^2_{n-1}}{n}}$$
+
+* **Why $n-1$?** The deviations are measured from $\bar y$, which was itself fitted to *these* data, so they are slightly too small. Dividing by $n-1$ ("degrees of freedom": one is used up by $\bar y$) corrects it exactly on average.
+* **Standard deviation vs standard error** (very common confusion):
+
+  * $s$ = spread of **individual observations** (does *not* shrink with $n$).
+  * $\se(\bar y)=s/\sqrt n$ = spread of the **sample mean** across samples (shrinks with $n$).
+
+## Central Limit Theorem: why everything works
+
+![Sampling distribution of $\bar y$ from a skewed population; red = $N(\mu,\sigma^2/n)$](figs/clt.pdf){width=85%}
+
+::: {.block}
+### In words
+Even if individual data are far from bell-shaped, the **average** of many of them *is* bell-shaped, centred at $\mu$ with sd $\sigma/\sqrt n$. This is what lets us use normal-table numbers (like 1.96) for any reasonable data, as long as $n$ is large.
+:::
+
+## Which distribution does the standardised mean follow?
+
+Standardising = "how many standard errors away from $\mu$ is $\bar y$?"
+
+| Situation | Statistic | Distribution |
+|:-----------------------------------|:----------------------------|:----------------------|
+| $\sigma^2$ **known**, $Y$ normal | $\dfrac{\bar y-\mu}{\sigma/\sqrt n}$ | $N(0,1)$ **exactly** |
+| $\sigma^2$ **known**, $Y$ any, $n$ large | $\dfrac{\bar y-\mu}{\sigma/\sqrt n}$ | $\approx N(0,1)$ (CLT) |
+| $\sigma^2$ **unknown**, $Y$ normal | $\dfrac{\bar y-\mu}{s_{n-1}/\sqrt n}$ | $t_{n-1}$ **exactly** |
+| $\sigma^2$ **unknown**, $Y$ any, $n$ large | $\dfrac{\bar y-\mu}{s_{n-1}/\sqrt n}$ | $\approx N(0,1)$ (CLT) |
+
+* **Why $t$ in the third row?** We now have *two* sources of uncertainty: $\bar y$ is random **and** $s$ is random. The $t$ distribution has fatter tails to account for the extra uncertainty. For large $n$, $s\approx\sigma$ and $t_{n-1}\to N(0,1)$ (rule of thumb: $n>30$).
+* **Small $n$ needs normal data**; large $n$ is rescued by the CLT.
+
+## Exercise 3 · Sample variance and standard error
+
+A sample of $n=26$ daily sales figures has $\sum_{i=1}^{26}(y_i-\bar y)^2=1000$.
+
+1. What is the sample variance $s^2_{n-1}$?
+2. What is the standard error of $\bar y$?
+3. Which of these is a common wrong answer, and what mistake produces it?
+   $\quad$ (a) $1.240$ $\quad$ (b) $1.538$ $\quad$ (c) $6.325$ $\quad$ (d) $38.46$ $\quad$ (e) $40$
+
+*Hint:* divide by $n-1$ first, then divide by $n$, then take the square root.
+
+## Solution · Exercise 3
+
+1. $s^2_{n-1}=\dfrac{1000}{n-1}=\dfrac{1000}{25}=\mathbf{40}$ (divide by $n-1$, not $n$).
+
+2. $\se(\bar y)=\sqrt{\dfrac{s^2_{n-1}}{n}}=\sqrt{\dfrac{40}{26}}=\sqrt{1.538}=\mathbf{1.240}$ $\to$ **(a)**
+
+3. The traps:
+
+   * (b) $1.538=s^2/n$: forgot the square root
+   * (c) $6.325=s$: forgot to divide by $\sqrt n$ (that is the sd, not the SE)
+   * (d) $38.46=1000/26$: divided by $n$ instead of $n-1$ (and no root)
+   * (e) $40$: that is $s^2$, not the SE
+
+# 3. Confidence intervals
+
+## From a point estimate to an interval
+
+**Idea.** $\bar y$ is a single guess. We know it is typically off by about one standard error, so we report a range around it:
+
+$$\boxed{\ \text{estimate}\ \pm\ \text{(multiplier)}\times\text{(standard error)}\ }$$
+
+* **Standard error** = how noisy our estimate is.
+* **Multiplier** (critical value) = how *confident* we want to be. More confidence $\Rightarrow$ bigger multiplier $\Rightarrow$ wider interval.
+
+::: {.block}
+### Why is the multiplier 1.96 for 95%?
+If $\bar y$ is normal around $\mu$, then **95% of the time** it falls within $\pm1.96$ standard errors of $\mu$ (figure on the next slide). So $\mu$ is within $\pm1.96$ SE of $\bar y$ in 95% of samples.
+:::
+
+## Where 1.96 comes from
+
+![The central 95% of a standard normal lies within $\pm1.96$. Leaves 2.5% in each tail.](figs/normal95.pdf){width=70%}
+
+* 90% $\to$ $\pm1.645$ (5% in each tail) $\qquad$ 95% $\to$ $\pm1.960$ $\qquad$ 99% $\to$ $\pm2.576$
+* In formulas, the multiplier is $z_{1-\alpha/2}$: for 95%, $\alpha=0.05$, so we need the **0.975 quantile** (leaving 2.5% in the upper tail).
+
+## What does "95% confident" really mean?
+
+::: columns
+:::: {.column width="48%"}
+* A CI is a **random interval**: its endpoints are statistics, so each sample gives a different one.
+* It contains the unknown $\mu$ with the **preassigned probability** $1-\alpha$. For 95%: about 95 intervals out of 100 contain $\mu$.
+::::
+:::: {.column width="52%"}
+![40 samples, 95% CIs. Red = interval misses $\mu$ (about 1 in 20 does).](figs/ci_coverage.pdf){width=100%}
+::::
+:::
+
+## Deriving the interval (known $\sigma$)
+
+With $z=z_{1-\alpha/2}$, we start from what we know about the standardised mean and rearrange to isolate $\mu$:
+$$\Pr\!\left(-z\le\frac{\bar y-\mu}{\sigma/\sqrt n}\le z\right)=1-\alpha
+\ \Longleftrightarrow\
+\Pr\!\left(\bar y-z\tfrac{\sigma}{\sqrt n}\le\mu\le\bar y+z\tfrac{\sigma}{\sqrt n}\right)=1-\alpha$$
+
+*Left:* "$\bar y$ is close to $\mu$." *Right:* the same statement, "$\mu$ is close to $\bar y$".
+
+Three cases, **one structure**: estimate $\pm$ critical value $\times$ standard error
+
+| Case | CI | Critical value |
+|:--------------------------------------------|:--------------------------------------------------|:------------------|
+| $\sigma^2$ **known** | $\bar y\pm z_{1-\alpha/2}\,\dfrac{\sigma}{\sqrt n}$ | $z$ |
+| $\sigma^2$ **unknown**, $n$ large (CLT) | $\bar y\pm z_{1-\alpha/2}\,\dfrac{s_{n-1}}{\sqrt n}$ | $z$ |
+| $\sigma^2$ **unknown**, $n$ small, $Y$ normal | $\bar y\pm t_{n-1;\,1-\alpha/2}\,\dfrac{s_{n-1}}{\sqrt n}$ | $t$ with $n-1$ df |
+
+## $z$ or $t$? Which table do I open?
+
+::: columns
+:::: {.column width="50%"}
+![$t$ has fatter tails (extra uncertainty from estimating $\sigma$); $t_{10}$ is already close to $N(0,1)$.](figs/t_vs_z.pdf){width=100%}
+::::
+:::: {.column width="50%"}
+| Confidence | $\alpha$ | $z_{1-\alpha/2}$ |
+|:------|-----:|------:|
+| 90% | 0.10 | 1.645 |
+| 95% | 0.05 | 1.960 |
+| 99% | 0.01 | 2.576 |
+
+Selected $t$ (95%, two-sided):
+
+| $n-1$ | 8 | 15 | 30 | $\infty$ |
+|:--|--:|--:|--:|--:|
+| $t_{0.975}$ | 2.306 | 2.131 | 2.042 | 1.960 |
+
+Full $t$ table: last slide.
+::::
+:::
+
+## Decision guide: which formula?
+
+1. Is $\sigma$ **given** in the problem (not just $s$)? $\to$ use $\sigma$ and $z$.
+2. Otherwise we use $s_{n-1}$. Is $n$ large (say $>30$)? $\to$ use $z$ (CLT).
+3. Is $n$ small? $\to$ the data must be **normal**, and we use $t_{n-1}$.
+
+::: {.block}
+### Then always
+1. **Standard error:** $\sigma/\sqrt n$ or $\sqrt{s^2_{n-1}/n}$ (the root comes *after* dividing by $n$).
+2. **Critical value:** two-sided $\Rightarrow$ quantile $1-\alpha/2$ (95% $\to$ 0.975, *not* 0.95).
+3. **Margin** $E=c\times\se$. Lower $=\bar y-E$, upper $=\bar y+E$, **width $=2E$**.
+:::
+
+## Worked example · a CI step by step
+
+Hourly wage of young workers. Sample: $n=100$, $\bar y=20$ EUR, $s=5$ EUR. $\sigma$ unknown, $n$ large.
+
+::: {.exampleblock}
+### Step by step
+1. **Case:** $\sigma$ unknown, $n$ large $\Rightarrow$ $z$.
+2. **SE:** $s/\sqrt n=5/10=0.5$.
+3. **Critical value, 95%:** $1.96$. **Margin:** $1.96\times0.5=0.98$.
+4. **CI:** $20\pm0.98=[19.02,\ 20.98]$.
+:::
+
+**Reading it:** values of $\mu$ between about 19 and 21 EUR/hour are consistent with our data.
+
+**What if we want 99%?** Multiplier $2.576$: $20\pm1.288=[18.71,\ 21.29]$. Wider: more confidence, less precision.
+
+## What makes an interval narrow or wide?
+
+$$\text{width}=2\times c\times\frac{s}{\sqrt n}$$
+
+| What changes | Effect on width | Example ($s=10$, 95%) |
+|:-------------------------|:-----------|:---------------------------|
+| more observations $n$ | narrower, but only by $\sqrt n$ | $n=25,100,400$: margin $3.92,\ 1.96,\ 0.98$ |
+| more confidence | wider | $n=100$: margin $1.645,\ 1.96,\ 2.576$ for 90, 95, 99% |
+| noisier data (larger $s$) | wider | doubling $s$ doubles the margin |
+
+* **Trade-off:** you cannot have high confidence *and* a narrow interval, unless you pay with more data.
+* Quadrupling $n$ is needed to halve the width.
+
+## Exercise 4 · CI, unknown $\sigma^2$, large sample
+
+The commuting time of workers in a city is studied. A random sample of $n=144$ workers gives $\bar y=38.5$ minutes and $s^2_{n-1}=324$.
+
+1. Why can we use the normal approximation here, even without knowing the population distribution?
+2. Compute the standard error.
+3. Build a 95% confidence interval for the mean commuting time.
+4. What is its width?
+
+*Hint:* follow the four steps of the worked example. Careful: the variance is given, not the standard deviation.
+
+## Solution · Exercise 4
+
+1. $n=144$ is large: by the CLT $\bar y$ is approximately normal, and replacing $\sigma$ by $s_{n-1}$ is harmless in large samples.
+2. $\se(\bar y)=\sqrt{324/144}=\sqrt{2.25}=\mathbf{1.5}$ min.
+3. $z_{0.975}=1.96$:
+$$\bar y\pm1.96\times1.5=38.5\pm2.94=\mathbf{[35.56,\ 41.44]}$$
+4. Width $=2\times2.94=\mathbf{5.88}$ min.
+
+**Interpretation:** 95% of intervals built this way contain the true mean commute, which here is somewhere around 36 to 41 minutes.
+
+## Exercise 5 · CI with *known* $\sigma^2$
+
+A machine fills rice bags. Filled weights are normally distributed with a **known** standard deviation $\sigma=20$ g. A sample of $n=25$ bags has mean $\bar y=502$ g.
+
+1. Compute a 90% confidence interval for the mean filled weight.
+2. Compute a 99% confidence interval. How does the width change, and why?
+
+*Hint:* $\sigma$ is given, so no $s$ and no $t$: the standard error is $\sigma/\sqrt n$.
+
+## Solution · Exercise 5
+
+Standard deviation of $\bar y$ (no estimation needed): $\sigma/\sqrt n=20/5=4$ g. Exact $N(0,1)$ since $Y$ is normal.
+
+1. 90%: $z_{0.95}=1.645$: $\ 502\pm1.645\times4=502\pm6.58=\mathbf{[495.42,\ 508.58]}$
+
+2. 99%: $z_{0.995}=2.576$: $\ 502\pm2.576\times4=502\pm10.30=\mathbf{[491.70,\ 512.30]}$
+
+   Width grows from 13.16 to 20.61: higher confidence $\Rightarrow$ larger critical value $\Rightarrow$ wider interval.
+
+## Exercise 6 · CI in a small sample
+
+The battery life (hours) of a new phone is assumed normally distributed. A lab tests $n=9$ phones: $\bar y=11.2$ and $s^2_{n-1}=2.25$.
+
+1. Which distribution and which critical value should you use for a 95% CI? Why not $1.96$?
+2. Build the 95% confidence interval.
+3. Which of these critical values is right for **a 99% CI with $n=16$**? $\quad$ (a) 2.576 $\quad$ (b) 2.602 $\quad$ (c) 2.947 $\quad$ (d) 2.131 $\quad$ (e) 3.286
+
+*Hint:* three ingredients for a critical value: which distribution, which quantile ($1-\alpha/2$), how many degrees of freedom ($n-1$).
+
+## Solution · Exercise 6
+
+1. $n=9$ is small and $\sigma^2$ unknown $\Rightarrow$ $\dfrac{\bar y-\mu}{s/\sqrt n}\sim t_{8}$ (needs normal data). $t_{8;\,0.975}=\mathbf{2.306}$. Using $1.96$ would give an interval that is **too narrow**: it would cover $\mu$ less than 95% of the time.
+
+2. $\se=\sqrt{2.25/9}=0.5$. Margin $=2.306\times0.5=1.153$:
+$$11.2\pm1.153=\mathbf{[10.05,\ 12.35]}$$
+(With $z$ it would wrongly be $[10.22,\ 12.18]$.)
+
+3. Two-sided 99% $\Rightarrow$ $1-\alpha/2=0.995$; $df=n-1=15$ $\Rightarrow$ $t_{15;0.995}=\mathbf{2.947}$ $\to$ **(c)**.
+   (a) is the normal quantile; (b) is the one-sided $t_{15;0.99}$; (d) is $t_{15;0.975}$ (the 95% value).
+
+## Margin of error and sample size
+
+The margin of error of the interval is $E=z_{1-\alpha/2}\times\se(\bar y)=z_{1-\alpha/2}\sqrt{\sigma^2/n}$, so for a fixed confidence level and population:
+
+$$E\propto\frac{1}{\sqrt n}$$
+
+* Precision grows with $\sqrt n$, not with $n$: to make $E$ **$k$ times smaller**, you need $n'=n\times k^2$.
+* Intuition: a 3 times smaller margin needs 9 times more data.
+* Writing the ratio: $\ E'/E=\sqrt{n/n'}=1/k\ \Rightarrow\ n'=k^2 n$.
+
+## Exercise 7 · Sample size
+
+1. A survey of $n=150$ observations gives a CI with margin of error $E=z_{1-\alpha/2}\,\se(\bar y)$. For the same population and confidence level, how large must the sample be for the margin of error to be $E/3$?
+2. A poll with $n=80$ has margin $E$. What sample size gives a margin $E/2$?
+3. The sample is doubled. By what factor does the width of the CI shrink?
+
+*Hint:* $E\propto1/\sqrt n$, so a $k$-fold smaller $E$ needs $k^2$ times more data.
+
+## Solution · Exercise 7
+
+1. $E'/E=\sqrt{n/n'}=1/3\Rightarrow n'=9n=150\times9=\mathbf{1350}$.
+   Classic wrong answers: $450$ ($3n$) or $50$ ($n/3$, which makes the interval *wider*).
+
+2. $n'=2^2\times80=\mathbf{320}$.
+
+3. $\text{width}\propto1/\sqrt n$: doubling $n$ shrinks the width by $1/\sqrt2\approx0.71$, i.e. only about **29%** narrower.
+
+# 4. Hypothesis testing
+
+## The logic of a test: a trial analogy
+
+::: columns
+:::: {.column width="50%"}
+**A court case**
+
+* Default: the defendant is **innocent** until proven guilty.
+* We convict only if the evidence is **very unlikely under innocence**.
+* Not guilty $\neq$ proven innocent: maybe just not enough evidence.
+::::
+:::: {.column width="50%"}
+**A statistical test**
+
+* Default: $H_0$ is true (nothing special, e.g. $\mu=\mu_0$).
+* We reject $H_0$ only if the data would be **very unlikely if $H_0$ were true**.
+* Not rejecting $\neq$ proving $H_0$: maybe just too little data.
+::::
+:::
+
+::: {.block}
+### The one question a test asks
+*"If $H_0$ were true, how surprising would my sample be?"* Very surprising $\Rightarrow$ we doubt $H_0$.
+:::
+
+## Setting up a test of the mean
+
+* **Null** $H_0:\ \mu=\mu_0$ (the claim being checked) vs an **alternative**:
+  two-sided $H_A:\mu\neq\mu_0$, or one-sided $H_A:\mu>\mu_0$ / $H_A:\mu<\mu_0$.
+* Fix the significance level $\alpha$ (usually 5%) **before** looking at the data: the false-alarm rate we tolerate.
+* **Test statistic** = *signal-to-noise ratio*: how many standard errors is $\bar y$ away from the claimed $\mu_0$?
+$$t=\frac{\bar y-\mu_0}{\se(\bar y)}=\frac{\text{signal: distance from }\mu_0}{\text{noise: typical sampling error}}$$
+* If $H_0$ is true, $t\sim N(0,1)$ (large $n$) or $t_{n-1}$ (normal $Y$, small $n$): the **null distribution**.
+* $|t|$ close to 0: consistent with $H_0$. $|t|$ large: hard to explain by chance alone.
+
+## Decision rule and p-value
+
+* **p-value:** the probability, **assuming $H_0$ is true**, of a test statistic *more extreme* than the one we observed.
+* **Significance level** $\alpha$: a cutoff on the p-value, chosen *before* the test. If $p<\alpha$ we **reject** $H_0$: what we observe is too unlikely under the Null.
+* **Equivalent rule (critical value):** reject if the observed statistic falls beyond the critical value.
+
+  * two-sided $H_A:\mu\neq\mu_0$: reject if $|t|>c_{1-\alpha/2}$ (95%: $1.96$).
+  * one-sided $H_A$: "more extreme" means only the direction of $H_A$ (right or left), and the critical value is $c_{1-\alpha}$ (e.g. $1.645$).
+
+* $c$ is a normal quantile $z$ for large $n$, and a $t_{n-1}$ quantile for small normal samples.
+
+## p-value: how surprising is my sample?
+
+::: columns
+:::: {.column width="52%"}
+![Two-sided test, $t=2.0$: p-value = red area (both tails).](figs/pvalue.pdf){width=100%}
+::::
+:::: {.column width="48%"}
+* **p-value** = probability, **assuming $H_0$ is true**, of getting a result *at least as extreme* as ours.
+* Small p $\Rightarrow$ our data would be rare under $H_0$ $\Rightarrow$ doubt $H_0$.
+* **Reject $\iff$ $p<\alpha$ $\iff$ $|t|>$ critical value.** Two routes, same decision.
+::::
+:::
+
+## Worked example · a test step by step
+
+Does the average student sleep **8 hours**? Sample: $n=100$, $\bar y=7.7$ h, $s=3$ h.
+
+::: {.exampleblock}
+### Step by step
+1. **Hypotheses:** $H_0:\mu=8$ vs $H_A:\mu\neq8$. Choose $\alpha=5\%$.
+2. **SE:** $3/\sqrt{100}=0.3$.
+3. **Test statistic:** $t=\dfrac{7.7-8}{0.3}=-1.0$: the sample is only **one SE** below 8.
+4. **Decide:** $|t|=1.0<1.96$. p-value $=2\times\Pr(Z>1)=0.317>0.05$ $\Rightarrow$ **do not reject**.
+5. **In words:** a gap of 0.3 h is well within normal sampling noise. We **fail to reject** $H_0$: no evidence against 8 hours (like "not guilty": that does not prove it is exactly 8).
+:::
+
+## Errors, power, and the role of $\alpha$ {.smaller}
+
+::: columns
+:::: {.column width="50%"}
+![](figs/errors.pdf){width=100%}
+
+**Power** $=1-\beta$: probability of *not* making a Type II error.
+::::
+:::: {.column width="50%"}
+| | $H_0$ true | $H_0$ false |
+|:------|:--------|:---------|
+| Reject | Type I ($\alpha$) | power $1-\beta$ |
+| Keep | correct | Type II ($\beta$) |
+
+* **Type I** = false alarm; **Type II** = missed detection.
+* We **choose** $\alpha$; $\beta$ depends on the true $\mu$, $n$, $\sigma$.
+* Lower $\alpha$ $\Rightarrow$ cutoff moves right $\Rightarrow$ $\beta$ up.
+* The two errors are inversely related: we fix $\alpha$ and try to maximise the power.
+::::
+:::
+
+## Exercise 8 · Two-sided test, large sample
+
+A delivery company advertises an average delivery time of **30 minutes**. Checking $n=225$ random orders gives $\bar y=31.2$ min and $s^2_{n-1}=81$.
+
+1. State $H_0$ and $H_A$ (two-sided).
+2. Compute the standard error and the $t$-statistic.
+3. Test at $\alpha=5\%$ and at $\alpha=1\%$. Compute the p-value.
+4. Interpret the result in words.
+
+*Hint:* same five steps as the sleep example; remember $s^2=81$, so $s=9$.
+
+## Solution · Exercise 8
+
+1. $H_0:\mu=30\ $ vs $\ H_A:\mu\neq30$.
+2. $\se=\sqrt{81/225}=9/15=0.6$, $\quad t=\dfrac{31.2-30}{0.6}=\mathbf{2.00}$: the sample mean is 2 SE above the claim.
+3. * $\alpha=5\%$: $|t|=2.00>1.96$ $\Rightarrow$ **reject** $H_0$.
+   * $\alpha=1\%$: $2.00<2.576$ $\Rightarrow$ **fail to reject**.
+   * p-value $=2\,(1-\Phi(2.00))=\mathbf{0.0455}$: below 0.05, above 0.01. Consistent.
+4. At 5% the data are too unlikely under "30 minutes", but the evidence is borderline: the decision depends on $\alpha$.
+
+## Exercise 9 · The small-sample trap
+
+A lab sets the target mean strength of a cable at $\mu_0=100$. The strength is normally distributed. A sample of $n=9$ cables gives $\bar y=106.6$ and $s^2_{n-1}=81$.
+
+1. Compute the $t$-statistic for $H_0:\mu=100$ vs $H_A:\mu\neq100$.
+2. Decide at 5% using (i) the normal critical value and (ii) the correct one. Do they agree?
+3. Which is correct and why?
+
+*Hint:* $n=9$ $\Rightarrow$ degrees of freedom $=8$ ($t_{8;0.975}=2.306$).
+
+## Solution · Exercise 9
+
+1. $\se=\sqrt{81/9}=3$, $\quad t=\dfrac{106.6-100}{3}=\mathbf{2.20}$.
+2. (i) Normal: $2.20>1.96$ $\Rightarrow$ reject.
+   (ii) $t_{8;0.975}=2.306$: $2.20<2.306$ $\Rightarrow$ **fail to reject**.
+3. Only (ii) is valid: $n=9$ is small and $\sigma$ is estimated, so the statistic follows $t_8$. The normal quantile is too small for a small sample and would reject too often.
+
+## Exercise 10 · True or false?
+
+1. "Rejecting $H_0$ when it is true is a Type II error."
+2. "The sample mean is an unbiased estimator of $\mu$ only if $Y$ is normally distributed."
+3. "If we fail to reject $H_0$, then $H_0$ is true."
+4. "Doubling the sample size halves the margin of error."
+5. "With $n=200$ and a clearly skewed $Y$ we cannot use the normal critical value."
+6. "Lowering $\alpha$ makes a Type II error more likely."
+
+## Solution · Exercise 10
+
+1. **False.** That is a Type I error (convicting an innocent). Type II = failing to reject a wrong $H_0$.
+2. **False.** $E(\bar y)=\mu$ whenever the $y_i$ are i.i.d.: no normality needed.
+3. **False.** Like "not guilty" is not "innocent": we only lacked enough evidence to reject.
+4. **False.** $E\propto1/\sqrt n$: the margin shrinks by $1/\sqrt2$; to halve it, $n$ must be **quadrupled**.
+5. **False.** The CLT makes $\bar y$ approximately normal for large $n$, whatever the distribution of $Y$.
+6. **True.** Type I and II errors are inversely related: a smaller $\alpha$ moves the critical value outwards and raises $\beta$.
+
+# 5. Wrap-up
+
+## The whole session in one picture
+
+::: {.block}
+### One recipe for everything
+$$\frac{\text{estimate}-\text{benchmark}}{\text{standard error}}\ \text{ is compared with a } z \text{ or } t \text{ table}$$
+:::
+
+* **Confidence interval:** start from the estimate, go $\pm$ (critical value) $\times$ SE. $\Rightarrow$ *plausible values of $\mu$*.
+* **Hypothesis test:** measure how many SE the estimate is from the claim $\mu_0$. $\Rightarrow$ *is the claim plausible?*
+* **Same ingredients:** $\bar y$, $\se=s/\sqrt n$, and the critical value ($z$ for large $n$ or known $\sigma$; $t_{n-1}$ for small $n$ with unknown $\sigma$).
+* **CLT** is what makes all this work for non-normal data when $n$ is large.
+
+## Cheat sheet
+
+| | **Confidence interval** | **Test of $H_0:\mu=\mu_0$** |
+|:----------------------|:----------------------------|:-----------------------------------------|
+| $\sigma^2$ known | $\bar y\pm z\,\sigma/\sqrt n$ | $z=(\bar y-\mu_0)\,/\,(\sigma/\sqrt n)$ |
+| $\sigma^2$ unknown, large $n$ | $\bar y\pm z\,s/\sqrt n$ | $t=(\bar y-\mu_0)\,/\,(s/\sqrt n)\approx N(0,1)$ |
+| $\sigma^2$ unknown, small $n$, normal $Y$ | $\bar y\pm t_{n-1}\,s/\sqrt n$ | $t=(\bar y-\mu_0)\,/\,(s/\sqrt n)\sim t_{n-1}$ |
+
+* $z_{0.95}=1.645,\ z_{0.975}=1.96,\ z_{0.995}=2.576$ $\quad$ · $\quad$ width $=2\times$ margin
+* Reject $\iff$ $p<\alpha$ $\iff$ $|t|>c_{1-\alpha/2}$ (two-sided) $\quad$ · $\quad$ $E\propto1/\sqrt n$
+* LIE: $\bar y=\sum_g\frac{n_g}{n}\bar y_g$
+
+## Five mistakes to avoid
+
+1. Forgetting the square root (or the $\sqrt n$) when computing the standard error.
+2. Using $z_{1-\alpha}$ (one-sided) for a two-sided interval: 95% $\to$ $1.96$, not $1.645$.
+3. Using the normal instead of $t_{n-1}$ for small samples with estimated variance.
+4. Mixing up Type I (reject a true $H_0$) and Type II (fail to reject a false $H_0$).
+5. Reporting the margin of error when the question asks for the width ($2\times$ margin).
+
+**More practice:** the 10-question multiple-choice set in *materials for TA* (`ci_ht_questions1.pdf`) uses exactly these skills.
+
+## Reference: $t$ critical values
+
+| df | $t_{0.90}$ | $t_{0.95}$ | $t_{0.975}$ | $t_{0.99}$ | $t_{0.995}$ |
+|--:|--:|--:|--:|--:|--:|
+| 5 | 1.476 | 2.015 | 2.571 | 3.365 | 4.032 |
+| 8 | 1.397 | 1.860 | 2.306 | 2.896 | 3.355 |
+| 10 | 1.372 | 1.812 | 2.228 | 2.764 | 3.169 |
+| 15 | 1.341 | 1.753 | 2.131 | 2.602 | 2.947 |
+| 20 | 1.325 | 1.725 | 2.086 | 2.528 | 2.845 |
+| 30 | 1.310 | 1.697 | 2.042 | 2.457 | 2.750 |
+| 60 | 1.296 | 1.671 | 2.000 | 2.390 | 2.660 |
+| $\infty$ | 1.282 | 1.645 | 1.960 | 2.326 | 2.576 |

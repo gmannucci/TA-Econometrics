@@ -1,0 +1,24 @@
+\frametitle{Five mistakes to avoid}
+\protect\phantomsection\label{five-mistakes-to-avoid}
+\begin{enumerate}
+\tightlist
+\item
+  Forgetting the square root (or the \(\sqrt n\)) when computing the
+  standard error.
+\item
+  Using \(z_{1-\alpha}\) (one-sided) for a two-sided interval: 95\%
+  \(\to\) \(1.96\), not \(1.645\).
+\item
+  Using the normal instead of \(t_{n-1}\) for small samples with
+  estimated variance.
+\item
+  Mixing up Type I (reject a true \(H_0\)) and Type II (fail to reject a
+  false \(H_0\)).
+\item
+  Reporting the margin of error when the question asks for the width
+  (\(2\times\) margin).
+\end{enumerate}
+
+\textbf{More practice:} the 10-question multiple-choice set in
+\emph{materials for TA} (\texttt{ci\_ht\_questions1.pdf}) uses exactly
+these skills.
